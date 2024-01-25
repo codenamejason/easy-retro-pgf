@@ -6,6 +6,15 @@ await import("./src/env.js");
 
 /** @type {import("next").NextConfig} */
 const config = {
+  images: {
+    domains: ["https://euc.li"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "euc.li",
+      },
+    ],
+  },
   reactStrictMode: true,
 
   eslint: {
