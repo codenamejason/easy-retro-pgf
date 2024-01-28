@@ -33,9 +33,9 @@ export const ApplicationSchema = z.object({
   bio: z.string().min(3),
   websiteUrl: z.string().url().min(1),
   payoutAddress: z.string().startsWith("0x"),
-  contributionDescription: z.string(),
-  impactDescription: z.string(),
-  impactCategory: z.array(z.string()),
+  contributionDescription: z.string().min(3),
+  impactDescription: z.string().min(3),
+  impactCategory: z.array(z.string()).min(1),
   contributionLinks: z
     .array(
       z.object({
@@ -57,7 +57,7 @@ export const ApplicationSchema = z.object({
   fundingSources: z
     .array(
       z.object({
-        description: z.string(),
+        description: z.string().min(3),
         amount: z.number(),
         currency: z.string().min(3).max(4),
         type: z.nativeEnum(reverseKeys(fundingSourceTypes)),

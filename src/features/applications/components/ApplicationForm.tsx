@@ -4,6 +4,7 @@ import { type PropsWithChildren } from "react";
 import { ImageUpload } from "~/components/ImageUpload";
 import { IconButton } from "~/components/ui/Button";
 import {
+  ErrorMessage,
   FieldArray,
   Form,
   FormControl,
@@ -15,7 +16,6 @@ import {
 import { Heading } from "~/components/ui/Heading";
 import { Spinner } from "~/components/ui/Spinner";
 import { impactCategories } from "~/config";
-import { useAccount } from "wagmi";
 import {
   ApplicationSchema,
   ProfileSchema,
@@ -29,6 +29,7 @@ import { Tag } from "~/components/ui/Tag";
 import { useIsCorrectNetwork } from "~/hooks/useIsCorrectNetwork";
 import { useLocalStorage } from "react-use";
 import { Alert } from "~/components/ui/Alert";
+import { useSession } from "next-auth/react";
 
 const ApplicationCreateSchema = z.object({
   profile: ProfileSchema,
@@ -291,13 +292,13 @@ function CreateApplicationButton({
   isLoading: boolean;
   buttonText: string;
 }) {
-  const { isConnected } = useAccount();
+  const { data: session } = useSession();
   const { isCorrectNetwork, correctNetwork } = useIsCorrectNetwork();
 
   return (
     <div className="flex items-center justify-between">
       <div>
-        {!isConnected && <div>You must connect wallet to create a list</div>}
+        {!session && <div>You must connect wallet to create a list</div>}
         {!isCorrectNetwork && (
           <div className="flex items-center gap-2">
             You must be connected to {correctNetwork.name}
@@ -307,7 +308,7 @@ function CreateApplicationButton({
 
       <IconButton
         icon={isLoading ? Spinner : null}
-        disabled={isLoading || !isConnected}
+        disabled={isLoading || !session}
         variant="primary"
         type="submit"
         isLoading={isLoading}
@@ -338,11 +339,16 @@ function ApplicationFormSection({
 }
 
 function ImpactTags() {
-  const { control, watch } = useFormContext();
-  const { field } = useController({ name: "impactCategory", control });
+  const { control, watch, formState } =
+    useFormContext<z.infer<typeof ApplicationCreateSchema>>();
+  const { field } = useController({
+    name: "application.impactCategory",
+    control,
+  });
 
-  const selected = (watch("impactCategory") ?? []) as string[];
+  const selected = watch("application.impactCategory") ?? [];
 
+  const error = formState.errors.application?.impactCategory;
   return (
     <div className="mb-4">
       <Label>
@@ -357,7 +363,11 @@ function ImpactTags() {
               selected={isSelected}
               key={value}
               onClick={() => {
-                field.onChange([value]);
+                const currentlySelected = isSelected
+                  ? selected.filter((s) => s !== value)
+                  : selected.concat(value);
+
+                field.onChange(currentlySelected);
               }}
             >
               {label}
@@ -365,6 +375,7 @@ function ImpactTags() {
           );
         })}
       </div>
+      {error && <ErrorMessage>{error.message}</ErrorMessage>}
     </div>
   );
 }
